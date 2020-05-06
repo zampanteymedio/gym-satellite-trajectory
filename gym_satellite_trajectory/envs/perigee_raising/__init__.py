@@ -1,0 +1,2 @@
+from gym_satellite_trajectory.envs.perigee_raising.discrete_one_axis_env import PerigeeRaisingDiscreteOneAxisEnv
+from gym_satellite_trajectory.envs.perigee_raising.discrete_three_axes_env import PerigeeRaisingDiscreteThreeAxesEnv
