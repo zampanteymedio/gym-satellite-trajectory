@@ -3,8 +3,8 @@ from gym_satellite_trajectory.envs.perigee_raising.common import PerigeeRaisingE
 
 
 class PerigeeRaisingDiscreteThreeAxesEnv(PerigeeRaisingEnvNormBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.action_space = spaces.Discrete(7)
         self._ACTIONS = {
             0: [0., 0., 0.],

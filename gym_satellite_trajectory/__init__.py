@@ -24,12 +24,12 @@ data_provider_manager.addProvider(crawler)
 register(
     id='PerigeeRaisingDiscreteOneAxis-v0',
     entry_point='gym_satellite_trajectory.envs.perigee_raising:PerigeeRaisingDiscreteOneAxisEnv',
-    timestep_limit=150,
+    kwargs={},
 )
 
 # Register gym environments
 register(
     id='PerigeeRaisingDiscreteThreeAxes-v0',
     entry_point='gym_satellite_trajectory.envs.perigee_raising:PerigeeRaisingDiscreteThreeAxesEnv',
-    timestep_limit=150,
+    kwargs={},
 )
