@@ -151,6 +151,10 @@ class PerigeeRaisingNormEnvBase(PerigeeRaisingEnvBase):
         box = self.internal_observation_space.high / self.internal_observation_space.high
         self.observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
 
+    def reset(self):
+        state = super().reset()
+        return state / self.internal_observation_space.high
+
     def step(self, action):
         state, reward, done, param = super().step(action)
         return state / self.internal_observation_space.high, reward, done, param
