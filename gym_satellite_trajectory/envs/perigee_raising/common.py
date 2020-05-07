@@ -52,11 +52,10 @@ class PerigeeRaisingEnvBase(gym.Env):
         self._random_generator = None
 
         self.close()
+        self.seed()
         self.reset()
 
     def reset(self):
-        self.seed()
-
         # noinspection PyArgumentList
         kep = (self._ref_sv + (self._random_generator.rand(6) * 2. - 1.) * self._ref_sv_pert).tolist()
         orbit = KeplerianOrbit(kep[0], kep[1], kep[2], kep[3], kep[4], kep[5],
