@@ -1,8 +1,8 @@
 from gym import spaces
-from gym_satellite_trajectory.envs.perigee_raising.common import PerigeeRaisingEnvNormBase
+from gym_satellite_trajectory.envs.perigee_raising.common import PerigeeRaisingNormEnvBase
 
 
-class PerigeeRaisingDiscreteOneAxisEnv(PerigeeRaisingEnvNormBase):
+class PerigeeRaisingDiscreteOneAxisEnv(PerigeeRaisingNormEnvBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.action_space = spaces.Discrete(3)

@@ -9,17 +9,21 @@ The following scenarios are supported:
 
 In this scenario, the agent needs to increase the perigee of a satellite without changing the apogee.
 
+### Continuous - 1 axis
+
+The agent needs to select continuously the intensity for 2 thrusters: one in each Y inertial direction.
+
+### Continuous - 3 axes
+
+The agent needs to select continuously the intensity for the 6 thrusters: one in each main inertial direction.
+
 ### Discrete - 1 axis
 
-The agent needs to select a thruster out of the 2 available thrusters: one in each Y inertial direction.
+The agent needs to select a thruster (or not) out of the 2 available thrusters: one in each Y inertial direction.
 
-### Discrete - 3 axis
+### Discrete - 3 axes
 
-The agent needs to select a thruster out of the 6 possible thrusters: one in each main inertial direction.
-
-### Continuous
-
-The agent needs to select continuously the intensity for the 6 thrusters, one in each main inertial direction.
+The agent needs to select a thruster (or not) out of the 6 possible thrusters: one in each main inertial direction.
 
 # Installation
 

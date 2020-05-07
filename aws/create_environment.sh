@@ -12,8 +12,9 @@ sudo yum install git -y
 
 # Install anaconda
 anaconda_file="Anaconda3-2020.02-Linux-x86_64.sh"
-# wget -q -c "https://repo.continuum.io/archive/${anaconda_file}"
-aws s3 cp "s3://awstest2-files/${anaconda_file}" .
+wget -q -c "https://repo.continuum.io/archive/${anaconda_file}"
+# You might prefer to get the file from a local S3 bucket
+# aws s3 cp "s3://awstest2-files/${anaconda_file}" .
 chmod +x $"{anaconda_file}"
 bash "./${anaconda_file}" -b -f -p ~/anaconda
 export PATH="${PATH}:~/anaconda/bin"

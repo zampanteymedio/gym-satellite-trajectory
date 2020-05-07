@@ -140,7 +140,7 @@ class PerigeeRaisingEnvBase(gym.Env):
         return ra, rp, m
 
 
-class PerigeeRaisingEnvNormBase(PerigeeRaisingEnvBase):
+class PerigeeRaisingNormEnvBase(PerigeeRaisingEnvBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         box = self.internal_observation_space.high / self.internal_observation_space.high
