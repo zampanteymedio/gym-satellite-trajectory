@@ -3,3 +3,6 @@ __pycache__/
 
 # PyCharm project files
 .idea/
+
+# Builds
+*.egg-info

@@ -47,7 +47,8 @@ class PerigeeRaisingEnvBase(gym.Env):
         self.action_space = spaces.Box(low=-1.01, high=1.01, shape=(3,), dtype=np.float64)
 
         self._propagator = None
-        self._hist_sc_state = []
+        self.hist_sc_state = None
+        self.hist_action = None
         self._current_step = None
         self._random_generator = None
 
@@ -69,22 +70,25 @@ class PerigeeRaisingEnvBase(gym.Env):
         point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
         self._propagator.addForceModel(point_gravity)
 
-        self._hist_sc_state = [SpacecraftState(orbit, self._ref_mass)]
-        self._propagator.setInitialState(self._hist_sc_state[0])
+        self.hist_sc_state = [SpacecraftState(orbit, self._ref_mass)]
+        self._propagator.setInitialState(self.hist_sc_state[0])
 
         rotation = FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation()
         attitude = InertialProvider(rotation)
         self._propagator.setAttitudeProvider(attitude)
 
         self._current_step = 0
+        self.hist_action = []
 
-        state = self._propagate(self._hist_sc_state[-1].getDate())
+        state = self._propagate(self.hist_sc_state[-1].getDate())
         return state
 
     def step(self, action):
-        current_time = self._hist_sc_state[-1].getDate()
+        self.hist_action.append(action)
+
+        current_time = self.hist_sc_state[-1].getDate()
         self._current_step += 1
-        new_time = self._hist_sc_state[0].getDate().shiftedBy(self._time_step * self._current_step)
+        new_time = self.hist_sc_state[0].getDate().shiftedBy(self._time_step * self._current_step)
 
         # noinspection PyTypeChecker
         action_norm = np.linalg.norm(action)
@@ -106,25 +110,26 @@ class PerigeeRaisingEnvBase(gym.Env):
 
     # noinspection PyUnusedLocal
     def render(self, mode=None):
-        print(self._hist_sc_state[-1])
+        print(self.hist_sc_state[-1])
 
     def close(self):
         self._propagator = None
-        self._hist_sc_state = None
+        self.hist_sc_state = None
+        self.hist_action = None
         self._current_step = None
         self._random_generator = None
 
     def _propagate(self, time):
-        self._hist_sc_state.append(self._propagator.propagate(time))
-        pv = self._hist_sc_state[-1].getPVCoordinates()
-        return np.array([self._hist_sc_state[-1].getDate().durationFrom(self._hist_sc_state[0].getDate())] +
+        self.hist_sc_state.append(self._propagator.propagate(time))
+        pv = self.hist_sc_state[-1].getPVCoordinates()
+        return np.array([self.hist_sc_state[-1].getDate().durationFrom(self.hist_sc_state[0].getDate())] +
                         list(pv.getPosition().toArray()) +
                         list(pv.getVelocity().toArray()) +
-                        [self._hist_sc_state[-1].getMass()])
+                        [self.hist_sc_state[-1].getMass()])
 
     def _get_reward(self):
-        ra0, rp0, m0 = self._get_ra_rp_m(self._hist_sc_state[0])
-        ra, rp, m = self._get_ra_rp_m(self._hist_sc_state[-1])
+        ra0, rp0, m0 = self._get_ra_rp_m(self.hist_sc_state[0])
+        ra, rp, m = self._get_ra_rp_m(self.hist_sc_state[-1])
 
         return -1.0e-5 * abs(ra - ra0) + \
             1.0e-5 * (rp - rp0) + \
