@@ -1,20 +1,14 @@
 import gym
 from gym import spaces
 import math
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import RandomState
 
 from org.hipparchus.geometry.euclidean.threed import Vector3D
-from org.orekit.attitudes import LofOffset
 from org.orekit.attitudes import InertialProvider
-from org.orekit.propagation.events import DateDetector
-from org.orekit.forces.gravity import HolmesFeatherstoneAttractionModel
 from org.orekit.forces.gravity import NewtonianAttraction
-from org.orekit.forces.gravity.potential import GravityFieldFactory
 from org.orekit.forces.maneuvers import ConstantThrustManeuver
 from org.orekit.frames import FramesFactory
-from org.orekit.frames import LOFType
 from org.orekit.orbits import KeplerianOrbit
 from org.orekit.orbits import OrbitType
 from org.orekit.orbits import PositionAngle
@@ -40,28 +34,31 @@ class PerigeeRaisingEnvBase(gym.Env):
 
         self._time_step = 60.0 * 5.0  # 5 minutes
         self._max_steps = 150
-        self._end_time = self._ref_time.shiftedBy(self._time_step * self._max_steps)
 
+        min_pos = self._ref_sv[0] * (1.0 - self._ref_sv[1])
+        max_pos = self._ref_sv[0] * (1.0 + self._ref_sv[1])
+        max_vel = np.sqrt(Constants.WGS84_EARTH_MU * (2.0 / min_pos - 1.0 / self._ref_sv[0]))
         box = np.array([self._time_step * self._max_steps * 1.1,
-                        15000.e3, 15000.e3, 15000.e3,
-                        15.e3, 15.e3, 15.e3,
+                        max_pos * 1.1, max_pos * 1.1, max_pos * 1.1,
+                        max_vel * 1.1, max_vel * 1.1, max_vel * 1.1,
                         self._ref_mass * 1.1])
         self.internal_observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
         self.observation_space = self.internal_observation_space
         self.action_space = spaces.Box(low=-1.01, high=1.01, shape=(3,), dtype=np.float64)
 
         self._propagator = None
-        self.current_sc_state = None
-        self.current_step = 0
+        self._hist_sc_state = []
+        self._current_step = None
+        self._random_generator = None
 
-        self._random_state = RandomState()
-
-        self.seed()
+        self.close()
         self.reset()
 
     def reset(self):
         self.seed()
-        kep = (self._ref_sv + (self._random_state.rand(6) * 2. - 1.) * self._ref_sv_pert).tolist()
+
+        # noinspection PyArgumentList
+        kep = (self._ref_sv + (self._random_generator.rand(6) * 2. - 1.) * self._ref_sv_pert).tolist()
         orbit = KeplerianOrbit(kep[0], kep[1], kep[2], kep[3], kep[4], kep[5],
                                PositionAngle.MEAN, self._ref_frame, self._ref_time, Constants.WGS84_EARTH_MU)
 
@@ -73,75 +70,75 @@ class PerigeeRaisingEnvBase(gym.Env):
         point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
         self._propagator.addForceModel(point_gravity)
 
-        #         Commented to make it faster...to be added once a more precise model is needed        
-        #         provider = GravityFieldFactory.getNormalizedProvider(8, 8)
-        #         holmesFeatherstone = HolmesFeatherstoneAttractionModel(self._fixed_frame, provider)
-        #         self._propagator.addForceModel(holmesFeatherstone)
+        self._hist_sc_state = [SpacecraftState(orbit, self._ref_mass)]
+        self._propagator.setInitialState(self._hist_sc_state[0])
 
-        self._propagator.setInitialState(SpacecraftState(orbit, self._ref_mass))
-
-        attitude = InertialProvider(
-            FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation())
+        rotation = FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation()
+        attitude = InertialProvider(rotation)
         self._propagator.setAttitudeProvider(attitude)
 
-        self.current_step = 0
+        self._current_step = 0
 
-        state = self._propagate(self._propagator.getInitialState().getDate())
+        state = self._propagate(self._hist_sc_state[-1].getDate())
         return state
 
     def step(self, action):
-        self.action = action
+        current_time = self._hist_sc_state[-1].getDate()
+        self._current_step += 1
+        new_time = self._hist_sc_state[0].getDate().shiftedBy(self._time_step * self._current_step)
+
+        # noinspection PyTypeChecker
         action_norm = np.linalg.norm(action)
-        if action_norm > 0.:
+        if action_norm > 0.0:
             direction = Vector3D((action / action_norm).tolist())
             force = (self._truster_force * action_norm).item()
-            manoeuvre = ConstantThrustManeuver(self._propagator.getInitialState().getDate(), self._time_step,
+            manoeuvre = ConstantThrustManeuver(current_time, self._time_step,
                                                force, self._truster_isp, direction)
             self._propagator.addForceModel(manoeuvre)
 
-        self.current_step = self.current_step + 1
-		
-        state = self._propagate(self._propagator.getInitialState().getDate().shiftedBy(self._time_step))
+        state = self._propagate(new_time)
         reward = self._get_reward()
-        done = not self.internal_observation_space.contains(self.state) or self.current_step >= self._max_steps
+        done = not self.internal_observation_space.contains(state) or self._current_step >= self._max_steps
         return state, reward, done, {}
 
     def seed(self, seed=None):
-        self._random_state = RandomState(seed)
+        self._random_generator = RandomState(seed)
         return [seed]
 
     # noinspection PyUnusedLocal
     def render(self, mode=None):
-	    pass
+        print(self._hist_sc_state[-1])
 
     def close(self):
-        pass
+        self._propagator = None
+        self._hist_sc_state = None
+        self._current_step = None
+        self._random_generator = None
 
     def _propagate(self, time):
-        self.current_sc_state = self._propagator.propagate(time)
-        pv = self.current_sc_state.getPVCoordinates()
-        return np.array([self._end_time.durationFrom(self.current_sc_state.getDate())] +
+        self._hist_sc_state.append(self._propagator.propagate(time))
+        pv = self._hist_sc_state[-1].getPVCoordinates()
+        return np.array([self._hist_sc_state[-1].getDate().durationFrom(self._hist_sc_state[0].getDate())] +
                         list(pv.getPosition().toArray()) +
                         list(pv.getVelocity().toArray()) +
-                        [self.current_sc_state.getMass()])
+                        [self._hist_sc_state[-1].getMass()])
 
     def _get_reward(self):
-        a = self.current_sc_state.getA()
-        e = self.current_sc_state.getE()
-        ra = a * (1.0 + e)
-        rp = a * (1.0 - e)
-        m = self.current_sc_state.getMass()
-
-        initial_sc_state = self._propagator.getInitialState()
-        a0 = initial_sc_state.getA()
-        e0 = initial_sc_state.getE()
-        ra0 = a0 * (1.0 + e0)
-        rp0 = a0 * (1.0 - e0)
-        m0 = initial_sc_state.getMass()
+        ra0, rp0, m0 = self._get_ra_rp_m(self._hist_sc_state[0])
+        ra, rp, m = self._get_ra_rp_m(self._hist_sc_state[-1])
 
         return -1.0e-5 * abs(ra - ra0) + \
             1.0e-5 * (rp - rp0) + \
             1.0e-1 * (m - m0)
+
+    @staticmethod
+    def _get_ra_rp_m(sc_state):
+        a = sc_state.getA()
+        e = sc_state.getE()
+        ra = a * (1.0 + e)
+        rp = a * (1.0 - e)
+        m = sc_state.getMass()
+        return ra, rp, m
 
 
 class PerigeeRaisingEnvNormBase(PerigeeRaisingEnvBase):

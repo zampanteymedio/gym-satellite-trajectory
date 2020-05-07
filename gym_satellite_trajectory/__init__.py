@@ -9,10 +9,11 @@ from org.orekit.data import DataProvidersManager, ZipJarCrawler
 logger = logging.getLogger(__name__)
 
 # Import Orekit
+# noinspection PyUnresolvedReferences
 vm = orekit.initVM()
 logger.info('Java version: %s', vm.java_version)
 
-# Load sample data
+# Load Orekit data
 data_provider_manager = DataProvidersManager.getInstance()
 datafile = File(os.path.join(os.path.dirname(__file__), '..', 'data', 'orekit-data.zip'))
 logger.info('Orekit data file: %s', datafile)
@@ -26,8 +27,6 @@ register(
     entry_point='gym_satellite_trajectory.envs.perigee_raising:PerigeeRaisingDiscreteOneAxisEnv',
     kwargs={},
 )
-
-# Register gym environments
 register(
     id='PerigeeRaisingDiscreteThreeAxes-v0',
     entry_point='gym_satellite_trajectory.envs.perigee_raising:PerigeeRaisingDiscreteThreeAxesEnv',

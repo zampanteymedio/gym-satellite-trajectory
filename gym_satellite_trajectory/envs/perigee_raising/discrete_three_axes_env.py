@@ -17,4 +17,5 @@ class PerigeeRaisingDiscreteThreeAxesEnv(PerigeeRaisingEnvNormBase):
         }
 
     def step(self, action):
+        # noinspection PyTypeChecker
         return super().step(self._ACTIONS[action])

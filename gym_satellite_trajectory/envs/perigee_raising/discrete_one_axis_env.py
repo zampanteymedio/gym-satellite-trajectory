@@ -11,3 +11,7 @@ class PerigeeRaisingDiscreteOneAxisEnv(PerigeeRaisingEnvNormBase):
             1: [0., 1., 0.],
             2: [0., -1., 0.]
         }
+
+    def step(self, action):
+        # noinspection PyTypeChecker
+        return super().step(self._ACTIONS[action])
