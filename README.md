@@ -24,7 +24,14 @@ one in each main inertial direction.
 # General Comments
 When using these environments, please take into consideration the folowing points:
 - The observations, the actions and the rewards are __NOT normalised__. You might want to do your own
-normalisation as your agent needs (e.g. using an Env Wrapper).
+normalisation as your agent needs. Something like:
+```python
+def get_env():
+    env = gym.make('PerigeeRaising-Discrete1D-v0')
+    wrapper_observation = gym.wrappers.TransformObservation(env, lambda o: o / env.observation_space.high)
+    wrapper_reward = gym.wrappers.TransformReward(wrapper_observation, lambda r: 1.e-5 * r)
+    return wrapper_reward
+```
 
 # Installation
 
