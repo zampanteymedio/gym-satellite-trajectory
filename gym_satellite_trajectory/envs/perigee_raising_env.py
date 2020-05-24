@@ -20,7 +20,7 @@ from org.orekit.time import TimeScalesFactory
 from org.orekit.utils import Constants
 
 
-class PerigeeRaisingEnvBase(gym.Env):
+class PerigeeRaisingEnv(gym.Env):
     def __init__(self, **kwargs):
         self._ref_time = AbsoluteDate(2004, 2, 1, 0, 0, 0.0, TimeScalesFactory.getUTC())
         self._ref_frame = FramesFactory.getGCRF()
@@ -42,8 +42,7 @@ class PerigeeRaisingEnvBase(gym.Env):
                         max_pos * 1.1, max_pos * 1.1, max_pos * 1.1,
                         max_vel * 1.1, max_vel * 1.1, max_vel * 1.1,
                         self._ref_mass * 1.1])
-        self.internal_observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
-        self.observation_space = self.internal_observation_space
+        self.observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
         self.action_space = spaces.Box(low=-1.01, high=1.01, shape=(3,), dtype=np.float64)
 
         self._propagator = None
@@ -101,7 +100,7 @@ class PerigeeRaisingEnvBase(gym.Env):
 
         state = self._propagate(new_time)
         reward = self._get_reward()
-        done = not self.internal_observation_space.contains(state) or self._current_step >= self._max_steps
+        done = not self.observation_space.contains(state) or self._current_step >= self._max_steps
         return state, reward, done, {}
 
     def seed(self, seed=None):
@@ -131,9 +130,9 @@ class PerigeeRaisingEnvBase(gym.Env):
         ra0, rp0, m0 = self._get_ra_rp_m(self.hist_sc_state[0])
         ra, rp, m = self._get_ra_rp_m(self.hist_sc_state[-1])
 
-        return -1.0e-5 * abs(ra - ra0) + \
-            1.0e-5 * (rp - rp0) + \
-            1.0e-1 * (m - m0)
+        return -1.0 * abs(ra - ra0) + \
+            1.0 * (rp - rp0) + \
+            0.0e+4 * (m - m0) # Increase me if you want mass to be optimised
 
     @staticmethod
     def _get_ra_rp_m(sc_state):
@@ -143,18 +142,3 @@ class PerigeeRaisingEnvBase(gym.Env):
         rp = a * (1.0 - e)
         m = sc_state.getMass()
         return ra, rp, m
-
-
-class PerigeeRaisingNormEnvBase(PerigeeRaisingEnvBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        box = self.internal_observation_space.high / self.internal_observation_space.high
-        self.observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
-
-    def reset(self):
-        state = super().reset()
-        return state / self.internal_observation_space.high
-
-    def step(self, action):
-        state, reward, done, param = super().step(action)
-        return state / self.internal_observation_space.high, reward, done, param
