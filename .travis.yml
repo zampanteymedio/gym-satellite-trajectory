@@ -20,18 +20,19 @@ before_install:
   - conda config --add channels conda-forge
   - conda update --yes conda
 
+  - pip install -U pip
+  - pip install -U pytest
+  - pip install codecov
+  - pip install tqdm
+
 install:
   - conda create --yes -n test python="$TRAVIS_PYTHON_VERSION"
   - source activate test
 
-  - pip install -U pip
-  - pip install -U pytest
-  - pip install codecov
   - conda install --yes orekit=10.0
 
-  - pip install ".[test]" .
+  - pip install ".[test]"
 
 script: pytest
 
-after_success:
-  - codecov
+after_success: codecov
