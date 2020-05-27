@@ -29,7 +29,7 @@ install:
 
   - conda install --yes orekit=10.0
 
-  - pip install ".[test]" .
+  - pip install -e ".[test]" .
 
 script: pytest
 
