@@ -22,6 +22,7 @@ from org.orekit.utils import Constants
 
 class PerigeeRaisingEnv(gym.Env):
     def __init__(self, **kwargs):
+        super(gym.Env, self).__init__(**kwargs)
         self._ref_time = AbsoluteDate(2004, 2, 1, 0, 0, 0.0, TimeScalesFactory.getUTC())
         self._ref_frame = FramesFactory.getGCRF()
         self._ref_sv = np.array([10000.e3, 0.1, 0.0, 0.0, 0.0, 0.0])
