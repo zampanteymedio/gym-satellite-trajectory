@@ -35,8 +35,8 @@ class TestTransformAction(unittest.TestCase):
 
     def test_reverse_action(self):
         env = self._create_env_cartpole_continuous()
-        self.assertRaises(NotImplementedError, env.reverse_action([0.7]),
-                          "The reverse action function is not yet supported")
+        with self.assertRaises(NotImplementedError, msg="The reverse action function is not yet supported"):
+            env.reverse_action([0.7])
 
     @staticmethod
     def _create_env_cartpole_changed():
