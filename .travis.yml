@@ -1,0 +1,9 @@
+sudo: false
+language: python
+python:
+  - "3.7"
+cache: pip
+install:
+  - pip install -e .
+script:
+  - python -m unittest discover
