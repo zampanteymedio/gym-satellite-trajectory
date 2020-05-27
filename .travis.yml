@@ -30,7 +30,7 @@ install:
   - pip install -e .[test]
 
 script:
-  - pytest --color=yes --cov gym_satellite_trajectory --cov-report=html:./reports/coverage
+  - pytest --color=yes --cov=gym_satellite_trajectory --cov-report=html:./reports/coverage
 
 after_success:
   - codecov
