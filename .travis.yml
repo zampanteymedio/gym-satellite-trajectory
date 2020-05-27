@@ -27,7 +27,7 @@ install:
 
   - conda install orekit=10.0
 
-  - pip install .[test]
+  - pip install -e .[test]
 
 script:
   - which python  # TODO remove
