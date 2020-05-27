@@ -1,8 +1,8 @@
 # Gym envs for Satellite Trajectory Optimization
 
-[![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
-[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 [![Build Status](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory.svg?branch=master)](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory)
+[![codecov](https://codecov.io/gh/zampanteymedio/gym-satellite-trajectory/branch/master/graph/badge.svg)](https://codecov.io/gh/zampanteymedio/gym-satellite-trajectory)
 
 The [Satellite Trajectory](https://github.com/zampanteymedio/gym-satellite-trajectory) library is a mono agent
 set of environments related to common trajectory design problems.
@@ -55,7 +55,10 @@ dependencies in a clean Amazon Linux EC2 instance.
 # Dependencies
 
 This package depends on Orekit wrapper for Python:
+
 https://gitlab.orekit.org/orekit-labs/python-wrapper/-/wikis/installation
+
+It's recommended to install it and its dependencies using conda.
 
 # Installation in AWS EC2 instance
 

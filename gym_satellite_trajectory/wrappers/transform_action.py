@@ -1,9 +1,11 @@
-from gym import ActionWrapper
+import gym
 
 
-class TransformAction(ActionWrapper):
-    def __init__(self, env, action_space, f, f2=None):
-        super(ActionWrapper, self).__init__(env)
+class TransformAction(gym.ActionWrapper):
+    def __init__(self, env, action_space, f, f2=None, **kwargs):
+        if isinstance(env, str):
+            env = gym.make(env, **kwargs)
+        super(gym.ActionWrapper, self).__init__(env)
         assert callable(f)
         if f2 is not None:
             assert callable(f2)

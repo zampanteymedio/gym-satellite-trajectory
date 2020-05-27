@@ -34,7 +34,7 @@ register(
     id='PerigeeRaising-Continuous1D-v0',
     entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
     kwargs={
-        'env': gym.make('PerigeeRaising-Continuous3D-v0'),
+        'env': 'PerigeeRaising-Continuous3D-v0',
         'action_space': gym.spaces.Box(low=-1.01, high=1.01, shape=(1,), dtype=np.float64),
         'f': lambda action: [0., action, 0.],
     },
@@ -53,7 +53,7 @@ register(
     id='PerigeeRaising-Discrete3D-v0',
     entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
     kwargs={
-        'env': gym.make('PerigeeRaising-Continuous3D-v0'),
+        'env': 'PerigeeRaising-Continuous3D-v0',
         'action_space': gym.spaces.Discrete(len(pr_d2c_3d)),
         'f': lambda action: pr_d2c_3d[action],
     },
@@ -68,7 +68,7 @@ register(
     id='PerigeeRaising-Discrete1D-v0',
     entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
     kwargs={
-        'env': gym.make('PerigeeRaising-Continuous3D-v0'),
+        'env': 'PerigeeRaising-Continuous3D-v0',
         'action_space': gym.spaces.Discrete(len(pr_d2c_1d)),
         'f': lambda action: pr_d2c_1d[action],
     },
