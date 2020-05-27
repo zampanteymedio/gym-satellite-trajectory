@@ -16,11 +16,6 @@ before_install:
   - export PATH="${HOME}/miniconda/bin:${PATH}"
 
   - conda config --add channels conda-forge
-  - conda update --yes conda
-
-  - pip install -U pip
-  - pip install -U pytest
-  - pip install codecov
   - pip install tqdm
 
 install:
@@ -29,6 +24,7 @@ install:
 
   - conda install --yes orekit=10.0
 
+  - pip install codecov
   - pip install -e ".[test]" .
 
 script: pytest
