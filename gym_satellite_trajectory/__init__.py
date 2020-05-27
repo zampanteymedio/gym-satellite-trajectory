@@ -35,7 +35,7 @@ register(
     entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
     kwargs={
         'env': 'PerigeeRaising-Continuous3D-v0',
-        'action_space': gym.spaces.Box(low=-1.01, high=1.01, shape=(1,), dtype=np.float64),
+        'action_space': gym.spaces.Box(low=-1., high=1., shape=(1,), dtype=np.float64),
         'f': lambda action: [0., action[0], 0.],
     },
 )

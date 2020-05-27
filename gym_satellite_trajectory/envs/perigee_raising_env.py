@@ -43,7 +43,7 @@ class PerigeeRaisingEnv(gym.Env):
                         max_vel * 1.1, max_vel * 1.1, max_vel * 1.1,
                         self._ref_mass * 1.1])
         self.observation_space = spaces.Box(low=-1. * box, high=box, dtype=np.float64)
-        self.action_space = spaces.Box(low=-1.01, high=1.01, shape=(3,), dtype=np.float64)
+        self.action_space = spaces.Box(low=-1., high=1., shape=(3,), dtype=np.float64)
 
         self._propagator = None
         self.hist_sc_state = None
