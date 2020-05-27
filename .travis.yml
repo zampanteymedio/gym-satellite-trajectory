@@ -5,9 +5,9 @@ dist: xenial
 language: python
 
 python:
-#  - "3.6"
+  - "3.6"
   - "3.7"
-#  - "3.8"
+  - "3.8"
 
 cache: pip
 
@@ -27,7 +27,7 @@ install:
   - conda install --yes orekit=10.0
 
   - pip install codecov
-  - pip install -e ".[test]" .
+  - pip install -e .[tests]
 
 script: pytest
 
