@@ -44,16 +44,3 @@ def get_env():
 
 You can follow the directions in the [.travis.yml](.travis.yml) file, which describes the necessary steps
 to install all the dependencies and this package in a clean environment.
-
-# Dependencies
-
-This package depends on Orekit wrapper for Python:
-
-https://gitlab.orekit.org/orekit-labs/python-wrapper/-/wikis/installation
-
-It's recommended to install it and its dependencies using conda.
-
-# Installation in AWS EC2 instance
-
-Check the aws folder for a script that fully configures an Amazon Linux EC2 instance to install this package
-and all its dependencies.
