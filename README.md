@@ -1,12 +1,11 @@
 # Gym envs for Satellite Trajectory Optimization
 
-The [Satellite Trajectory](https://github.com/zampanteymedio/gym-satellite-trajectory) is a mono agent
+[![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![Build Status](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory.svg?branch=master)](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory)
+
+The [Satellite Trajectory](https://github.com/zampanteymedio/gym-satellite-trajectory) library is a mono agent
 set of environments related to common trajectory design problems.
-
-# Status
-
-[![Python 3.7](https://img.shields.io/badge/python-3.7-green.svg)](https://www.python.org/downloads/release/python-370/)
-[![Build Status](https://travis-ci.com/zampanteymedio/phd-satellite-trajectory.svg?token=5u83STK3Ceb1MuJDeDoy&branch=master)](https://travis-ci.com/zampanteymedio/phd-satellite-trajectory)
 
 # Environments
 

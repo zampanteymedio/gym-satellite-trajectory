@@ -7,4 +7,5 @@ setup(name='gym-satellite-trajectory',
                         'numpy>=1.16.5',
                         'matplotlib>=3.1.1',
                         'orekit>=10.0',
-                        ])
+                        ],
+     )
