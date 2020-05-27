@@ -42,16 +42,8 @@ def get_env():
 
 # Installation
 
-Assuming that all dependencies are met, you need to install the downloaded package using pip:
-
-```bash
-cd gym-satellite-trajectory
-pip install -e .
-```
-
-If you are working on a clean environment, you need to install all dependencies. You can follow the
-directions in the [create_environment.sh](aws/create_environment.sh) file, which describes the necessary steps to install all
-dependencies in a clean Amazon Linux EC2 instance.
+You can follow the directions in the [.travis.yml](.travis.yml) file, which describes the necessary steps
+to install all the dependencies and this package in a clean environment.
 
 # Dependencies
 
