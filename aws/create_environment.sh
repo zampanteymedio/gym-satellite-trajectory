@@ -22,7 +22,7 @@ rm -f "${anaconda_file}"
 
 # Install Orekit
 conda config --add channels conda-forge
-conda install -y orekit
+conda install -y orekit=10.0
 
 # Install Other python dependencies
 pip install PyHamcrest
