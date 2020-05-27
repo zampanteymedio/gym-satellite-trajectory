@@ -7,7 +7,8 @@ language: python
 python:
   - "3.6"
   - "3.7"
-  - "3.8"
+# Version 3.8 does not have a pip tenslorflow 1 library
+#  - "3.8"
 
 cache: pip
 
