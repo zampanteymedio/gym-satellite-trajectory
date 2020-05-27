@@ -26,9 +26,10 @@ install:
 
   - conda install --yes orekit=10.0
 
-  - pip install codecov
   - pip install -e .[tests]
 
-script: pytest
+script:
+  - which pytest  # TODO remove
+  - pytest --cov gym_satellite_trajectory --cov-report=html:./reports/coverage
 
 after_success: codecov

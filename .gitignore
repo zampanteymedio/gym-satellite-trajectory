@@ -6,3 +6,7 @@ __pycache__/
 
 # Builds
 *.egg-info
+
+# Coverage report
+.coverage
+reports
