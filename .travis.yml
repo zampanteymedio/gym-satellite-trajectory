@@ -26,9 +26,10 @@ install:
 
   - conda install --yes orekit=10.0
 
-  - pip install -e .[tests]
+  - pip install -e .[test] .
 
 script:
+  - which python  # TODO remove
   - which pytest  # TODO remove
   - pytest --cov gym_satellite_trajectory --cov-report=html:./reports/coverage
 
