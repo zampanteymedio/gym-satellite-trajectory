@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='gym-satellite-trajectory',
-      version='0.0.1-snapshot',
+      version='0.0.1+snapshot',
       python_requires='>=3.6',
       packages=['gym_satellite_trajectory'],
       scripts=[],
