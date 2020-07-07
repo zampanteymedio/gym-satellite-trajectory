@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.6&nbsp;|&nbsp;3.7](https://img.shields.io/badge/python-3.6&nbsp;|&nbsp;3.7-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
+![Code scanning - action](https://github.com/zampanteymedio/gym-satellite-trajectory/workflows/Code%20scanning%20-%20action/badge.svg?branch=master)
+
 The [Satellite Trajectory](https://github.com/zampanteymedio/gym-satellite-trajectory) library is a mono agent
 set of environments related to common trajectory design problems.
 
