@@ -3,7 +3,7 @@ import gym
 import numpy as np
 import unittest
 from gym_satellite_trajectory.wrappers.transform_action import TransformAction
-from stable_baselines.common.env_checker import check_env
+from stable_baselines3.common.env_checker import check_env
 
 
 class TestTransformAction(unittest.TestCase):

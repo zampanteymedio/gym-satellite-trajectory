@@ -7,8 +7,8 @@ language: python
 python:
   - "3.6"
   - "3.7"
-# Version 3.8 does not have a pip tenslorflow 1 library
-#  - "3.8"
+  - "3.8"
+  - "3.9"
 
 cache: pip
 
@@ -19,15 +19,16 @@ before_install:
   - export PATH="${HOME}/miniconda/bin:${PATH}"
 
   - conda config --set always_yes yes
-  - conda update conda
   - conda config --add channels conda-forge
+  - conda config --set channel_priority false
+  - conda update conda
 
 install:
   - conda create -n test python="$TRAVIS_PYTHON_VERSION"
   - source activate test
 
-  - conda install orekit=10.0
-
+  - conda install orekit=10.2
+  - conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
   - pip install -e .[test]
 
 script:

@@ -2,7 +2,7 @@ import test.ignore_deprecation_warnings
 import gym
 import gym_satellite_trajectory
 import unittest
-from stable_baselines.common.env_checker import check_env
+from stable_baselines3.common.env_checker import check_env
 
 
 class TestEnvs(unittest.TestCase):
