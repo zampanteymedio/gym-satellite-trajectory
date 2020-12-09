@@ -30,8 +30,8 @@ class PerigeeRaisingEnv(gym.Env):
         self._ref_mass = 1000.0
         self._ref_sc_frame = FramesFactory.getGCRF()
 
-        self._truster_force = 1.0  # N
-        self._truster_isp = 4000.0  # s
+        self._thruster_force = 1.0  # N
+        self._thruster_isp = 4000.0  # s
 
         self._time_step = 60.0 * 5.0  # 5 minutes
         self._max_steps = 150
@@ -94,15 +94,16 @@ class PerigeeRaisingEnv(gym.Env):
         action_norm = np.linalg.norm(action)
         if action_norm > 0.0:
             direction = Vector3D((action / action_norm).tolist())
-            force = (self._truster_force * action_norm).item()
+            force = (self._thruster_force * action_norm).item()
             manoeuvre = ConstantThrustManeuver(current_time, self._time_step,
-                                               force, self._truster_isp, direction)
+                                               force, self._thruster_isp, direction)
             self._propagator.addForceModel(manoeuvre)
 
         state = self._propagate(new_time)
         reward = self._get_reward()
         done = not self.observation_space.contains(state) or self._current_step >= self._max_steps
-        return state, reward, done, {}
+        info = {'is_success': True} if done else {}
+        return state, reward, done, info
 
     def seed(self, seed=None):
         self._random_generator = RandomState(seed)
