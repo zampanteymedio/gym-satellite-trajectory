@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory.svg?branch=master)](https://travis-ci.com/zampanteymedio/gym-satellite-trajectory)
 [![codecov](https://codecov.io/gh/zampanteymedio/gym-satellite-trajectory/branch/master/graph/badge.svg)](https://codecov.io/gh/zampanteymedio/gym-satellite-trajectory)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.6&nbsp;|&nbsp;3.7](https://img.shields.io/badge/python-3.6&nbsp;|&nbsp;3.7-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![Python 3.6&nbsp;|&nbsp;3.7&nbsp;|&nbsp;3.8](https://img.shields.io/badge/python-3.6&nbsp;|&nbsp;3.7&nbsp;|&nbsp;3.8-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 ![Code scanning - action](https://github.com/zampanteymedio/gym-satellite-trajectory/workflows/Code%20scanning%20-%20action/badge.svg?branch=master)
 
@@ -31,7 +31,7 @@ one in each Y inertial direction.
 one in each main inertial direction.
 
 # General Comments
-When using these environments, please take into consideration the folowing points:
+When using these environments, please take into consideration the following points:
 - The observations, the actions and the rewards are __NOT normalised__. You might want to do your own
 normalisation as your agent needs. Something like:
 ```python
@@ -45,4 +45,4 @@ def get_env():
 # Installation
 
 You can follow the directions in the [.travis.yml](.travis.yml) file, which describes the necessary steps
-to install all the dependencies and this package in a clean environment.
+to install this package and all its dependencies in a clean Anaconda environment.
