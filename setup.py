@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def readme():
@@ -9,7 +9,7 @@ def readme():
 setup(name='gym-satellite-trajectory',
       version='0.0.1+snapshot',
       python_requires='>=3.6',
-      packages=['gym_satellite_trajectory'],
+      packages=find_packages(where='.', exclude=('test',)),
       scripts=[],
       description='Gym environments for spacecraft trajectory optimization',
       long_description=readme(),
