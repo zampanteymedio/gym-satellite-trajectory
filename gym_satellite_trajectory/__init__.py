@@ -17,7 +17,7 @@ logger.info('Java version: %s', vm.java_version)
 
 # Load Orekit data
 data_provider_manager = DataProvidersManager.getInstance()
-datafile = File(os.path.join(os.path.dirname(__file__), '..', 'data', 'orekit-data.zip'))
+datafile = File(os.path.join(os.path.dirname(__file__), 'data', 'orekit-data.zip'))
 logger.info('Orekit data file: %s', datafile)
 crawler = ZipJarCrawler(datafile)
 data_provider_manager.clearProviders()
