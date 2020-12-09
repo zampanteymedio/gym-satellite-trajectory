@@ -1,12 +1,11 @@
 os: linux
 
-dist: xenial
-
 language: python
 
 python:
-  - "3.6"
-  - "3.7"
+# 3.6 and 3.7 commented out not to exhaust Travis CI credits
+#  - "3.6"
+#  - "3.7"
   - "3.8"
 # Orekit is not yet available for Python 3.9
 #  - "3.9"
