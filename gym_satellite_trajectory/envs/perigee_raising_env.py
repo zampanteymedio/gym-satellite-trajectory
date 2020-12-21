@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import RandomState
 
@@ -49,6 +50,8 @@ class PerigeeRaisingEnv(gym.Env):
         self._propagator = None
         self.hist_sc_state = None
         self.hist_action = None
+        self.prev_hist_sc_state = None
+        self.prev_hist_action = None
         self._current_step = None
         self._random_generator = None
 
@@ -70,6 +73,7 @@ class PerigeeRaisingEnv(gym.Env):
         point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
         self._propagator.addForceModel(point_gravity)
 
+        self.prev_hist_sc_state = self.hist_sc_state
         self.hist_sc_state = [SpacecraftState(orbit, self._ref_mass)]
         self._propagator.setInitialState(self.hist_sc_state[0])
 
@@ -78,6 +82,7 @@ class PerigeeRaisingEnv(gym.Env):
         self._propagator.setAttitudeProvider(attitude)
 
         self._current_step = 0
+        self.prev_hist_action = self.hist_action
         self.hist_action = []
 
         state = self._propagate(self.hist_sc_state[-1].getDate())
@@ -111,7 +116,12 @@ class PerigeeRaisingEnv(gym.Env):
 
     # noinspection PyUnusedLocal
     def render(self, mode=None):
-        print(self.hist_sc_state[-1])
+        if mode == 'plot':
+            return self._plot(self.hist_sc_state)
+        if mode == 'prev_plot':
+            return self._plot(self.prev_hist_sc_state)
+        else:
+            print(self.hist_sc_state[-1])
 
     def close(self):
         self._propagator = None
@@ -119,6 +129,43 @@ class PerigeeRaisingEnv(gym.Env):
         self.hist_action = None
         self._current_step = None
         self._random_generator = None
+
+    @staticmethod
+    def _plot(hist_sc_state):
+        fig, axs = plt.subplots(2, 2, figsize=(15.0, 10.0))
+        time = np.array(list(map(lambda sc_state: sc_state.getDate().durationFrom(hist_sc_state[0].getDate()),
+                                 hist_sc_state))) / 3600.0  # Convert to hours
+        a = np.array(list(map(lambda sc_state: sc_state.getA(), hist_sc_state))) / 1000.0  # Convert to km
+        e = np.array(list(map(lambda sc_state: sc_state.getE(), hist_sc_state)))
+        mass = np.array(list(map(lambda sc_state: sc_state.getMass(), hist_sc_state)))
+        ra = a * (1.0 + e)
+        rp = a * (1.0 - e)
+
+        axs[0, 0].ticklabel_format(axis='y', style='plain', useOffset=ra[0])
+        axs[0, 0].set_xlim(time[0], time[-1])
+        axs[0, 0].set_ylim(ra[0]-100.0, ra[0]+100.0)
+        axs[0, 0].grid(True)
+        axs[0, 0].set_xlabel("time (h)")
+        axs[0, 0].set_ylabel("ra (km)")
+        axs[0, 0].plot(time, ra)
+
+        axs[0, 1].ticklabel_format(axis='y', style='plain', useOffset=rp[0])
+        axs[0, 1].set_xlim(time[0], time[-1])
+        axs[0, 1].set_ylim(rp[0]-100.0, rp[0]+100.0)
+        axs[0, 1].grid(True)
+        axs[0, 1].set_xlabel("time (h)")
+        axs[0, 1].set_ylabel("rp (km)")
+        axs[0, 1].plot(time, rp)
+
+        axs[1, 0].ticklabel_format(axis='y', style='plain', useOffset=mass[0])
+        axs[1, 0].set_xlim(time[0], time[-1])
+        axs[1, 0].set_ylim(mass[0]-2.0, mass[0])
+        axs[1, 0].grid(True)
+        axs[1, 0].set_xlabel("time (h)")
+        axs[1, 0].set_ylabel("mass (kg)")
+        axs[1, 0].plot(time, mass)
+
+        return fig
 
     def _propagate(self, time):
         self.hist_sc_state.append(self._propagator.propagate(time))
