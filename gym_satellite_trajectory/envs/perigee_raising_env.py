@@ -74,8 +74,9 @@ class PerigeeRaisingEnv(gym.Env):
         self._propagator.addForceModel(point_gravity)
 
         self.prev_hist_sc_state = self.hist_sc_state
-        self.hist_sc_state = [SpacecraftState(orbit, self._ref_mass)]
-        self._propagator.setInitialState(self.hist_sc_state[0])
+        self.hist_sc_state = []
+
+        self._propagator.setInitialState(SpacecraftState(orbit, self._ref_mass))
 
         rotation = FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation()
         attitude = InertialProvider(rotation)
@@ -85,7 +86,7 @@ class PerigeeRaisingEnv(gym.Env):
         self.prev_hist_action = self.hist_action
         self.hist_action = []
 
-        state = self._propagate(self.hist_sc_state[-1].getDate())
+        state = self._propagate(self._propagator.getInitialState().getDate())
         return state
 
     def step(self, action):
@@ -105,8 +106,8 @@ class PerigeeRaisingEnv(gym.Env):
             self._propagator.addForceModel(manoeuvre)
 
         state = self._propagate(new_time)
+        done = self._is_done()
         reward = self._get_reward()
-        done = not self.observation_space.contains(state) or self._current_step >= self._max_steps
         info = {'is_success': True} if done else {}
         return state, reward, done, info
 
@@ -117,9 +118,9 @@ class PerigeeRaisingEnv(gym.Env):
     # noinspection PyUnusedLocal
     def render(self, mode=None):
         if mode == 'plot':
-            return self._plot(self.hist_sc_state)
+            return self._plot(self.hist_sc_state, self.hist_action)
         if mode == 'prev_plot':
-            return self._plot(self.prev_hist_sc_state)
+            return self._plot(self.prev_hist_sc_state, self.prev_hist_action)
         else:
             print(self.hist_sc_state[-1])
 
@@ -131,8 +132,8 @@ class PerigeeRaisingEnv(gym.Env):
         self._random_generator = None
 
     @staticmethod
-    def _plot(hist_sc_state):
-        fig, axs = plt.subplots(2, 2, figsize=(15.0, 10.0))
+    def _plot(hist_sc_state, hist_action):
+        fig, axs = plt.subplots(3, 2, figsize=(15.0, 15.0))
         time = np.array(list(map(lambda sc_state: sc_state.getDate().durationFrom(hist_sc_state[0].getDate()),
                                  hist_sc_state))) / 3600.0  # Convert to hours
         a = np.array(list(map(lambda sc_state: sc_state.getA(), hist_sc_state))) / 1000.0  # Convert to km
@@ -140,7 +141,13 @@ class PerigeeRaisingEnv(gym.Env):
         mass = np.array(list(map(lambda sc_state: sc_state.getMass(), hist_sc_state)))
         ra = a * (1.0 + e)
         rp = a * (1.0 - e)
-
+        v = np.array(list(map(lambda sc_state: sc_state.getPVCoordinates().getVelocity().toArray(), hist_sc_state)))
+        f_mod = np.array(list(map(lambda action: np.linalg.norm(action), hist_action)))
+        angle_v_f = list(map(lambda q:
+                             np.degrees(np.arccos(
+                                 np.dot(q[0], q[1]) / np.linalg.norm(q[0]) / (np.linalg.norm(q[1]) + 1e-10)
+                             )),
+                             zip(v, hist_action)))
         axs[0, 0].ticklabel_format(axis='y', style='plain', useOffset=ra[0])
         axs[0, 0].set_xlim(time[0], time[-1])
         axs[0, 0].set_ylim(ra[0]-100.0, ra[0]+100.0)
@@ -165,6 +172,22 @@ class PerigeeRaisingEnv(gym.Env):
         axs[1, 0].set_ylabel("mass (kg)")
         axs[1, 0].plot(time, mass)
 
+        axs[1, 1].ticklabel_format(axis='y', style='plain')
+        axs[1, 1].set_xlim(time[0], time[-1])
+        axs[1, 1].set_ylim(-0.1, 1.1)
+        axs[1, 1].grid(True)
+        axs[1, 1].set_xlabel("time (h)")
+        axs[1, 1].set_ylabel("F (-)")
+        axs[1, 1].plot(time[0:-1], f_mod)
+
+        axs[2, 0].ticklabel_format(axis='y', style='plain')
+        axs[2, 0].set_xlim(time[0], time[-1])
+        axs[2, 0].set_ylim(-10.0, 190.0)
+        axs[2, 0].grid(True)
+        axs[2, 0].set_xlabel("time (h)")
+        axs[2, 0].set_ylabel("angle v-F (deg)")
+        axs[2, 0].plot(time[0:-1], angle_v_f)
+
         return fig
 
     def _propagate(self, time):
@@ -175,13 +198,19 @@ class PerigeeRaisingEnv(gym.Env):
                         list(pv.getVelocity().toArray()) +
                         [self.hist_sc_state[-1].getMass()])
 
+    def _is_done(self):
+        return self._current_step >= self._max_steps
+
     def _get_reward(self):
+        if not self._is_done():
+            return 0.0
         ra0, rp0, m0 = self._get_ra_rp_m(self.hist_sc_state[0])
         ra, rp, m = self._get_ra_rp_m(self.hist_sc_state[-1])
 
-        return -1.0 * abs(ra - ra0) + \
+        return \
+            -1.0 * abs(ra - ra0) + \
             1.0 * (rp - rp0) + \
-            0.0e+4 * (m - m0) # Increase me if you want mass to be optimised
+            0.0 * (m - m0)  # Increase me if you want mass to be optimised
 
     @staticmethod
     def _get_ra_rp_m(sc_state):

@@ -1,1 +1,3 @@
-# Empty
+import gym_satellite_trajectory
+
+gym_satellite_trajectory.register_environments()
