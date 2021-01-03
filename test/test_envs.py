@@ -1,7 +1,6 @@
-import test.ignore_deprecation_warnings
-import gym
-import gym_satellite_trajectory
 import unittest
+
+import gym
 from stable_baselines3.common.env_checker import check_env
 
 

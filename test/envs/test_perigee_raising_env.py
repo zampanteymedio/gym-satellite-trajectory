@@ -1,7 +1,8 @@
-import test.ignore_deprecation_warnings
 import unittest
-from gym_satellite_trajectory.envs.perigee_raising_env import PerigeeRaisingEnv
+
 from stable_baselines3.common.env_checker import check_env
+
+from gym_satellite_trajectory.envs.perigee_raising_env import PerigeeRaisingEnv
 
 
 class TestPerigeeRaisingEnv(unittest.TestCase):

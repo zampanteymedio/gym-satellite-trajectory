@@ -1,9 +1,10 @@
-import test.ignore_deprecation_warnings
+import unittest
+
 import gym
 import numpy as np
-import unittest
-from gym_satellite_trajectory.wrappers.transform_action import TransformAction
 from stable_baselines3.common.env_checker import check_env
+
+from gym_satellite_trajectory.wrappers.transform_action import TransformAction
 
 
 class TestTransformAction(unittest.TestCase):
