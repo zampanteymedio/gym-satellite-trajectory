@@ -177,16 +177,24 @@ class PerigeeRaisingEnv(gym.Env):
         axs[1, 1].set_ylim(-0.1, 1.1)
         axs[1, 1].grid(True)
         axs[1, 1].set_xlabel("time (h)")
-        axs[1, 1].set_ylabel("F (-)")
+        axs[1, 1].set_ylabel("|F| (-)")
         axs[1, 1].plot(time[0:-1], f_mod)
 
         axs[2, 0].ticklabel_format(axis='y', style='plain')
         axs[2, 0].set_xlim(time[0], time[-1])
-        axs[2, 0].set_ylim(-10.0, 190.0)
+        axs[2, 0].set_ylim(-1.1, 1.1)
         axs[2, 0].grid(True)
         axs[2, 0].set_xlabel("time (h)")
-        axs[2, 0].set_ylabel("angle v-F (deg)")
-        axs[2, 0].plot(time[0:-1], angle_v_f)
+        axs[2, 0].set_ylabel("F (-)")
+        axs[2, 0].plot(time[0:-1], hist_action)
+
+        axs[2, 1].ticklabel_format(axis='y', style='plain')
+        axs[2, 1].set_xlim(time[0], time[-1])
+        axs[2, 1].set_ylim(-10.0, 190.0)
+        axs[2, 1].grid(True)
+        axs[2, 1].set_xlabel("time (h)")
+        axs[2, 1].set_ylabel("angle v-F (deg)")
+        axs[2, 1].plot(time[0:-1], angle_v_f)
 
         return fig
 
