@@ -26,12 +26,13 @@ class PerigeeRaisingEnv(gym.Env):
         super(gym.Env, self).__init__(**kwargs)
         self._ref_time = AbsoluteDate(2004, 2, 1, 0, 0, 0.0, TimeScalesFactory.getUTC())
         self._ref_frame = FramesFactory.getGCRF()
-        self._ref_sv = np.array([10000.e3, 0.1, 0.0, 0.0, 0.0, 0.0])
+        # self._ref_sv = np.array([10000.e3, 0.1, 0.0, 0.0, 0.0, 0.0])
+        self._ref_sv = np.array([10000.e3, 0.1, math.pi / 4.0, math.pi / 6.0, math.pi * 4.0 / 6.0, 0.0])
         self._ref_sv_pert = np.array([0.0, 0.0, 0.0, 0.0, 0.0, math.pi])
         self._ref_mass = 1000.0
         self._ref_sc_frame = FramesFactory.getGCRF()
 
-        self._thruster_force = 1.0  # N
+        self._thruster_max_force = 1.0  # N
         self._thruster_isp = 4000.0  # s
 
         self._time_step = 60.0 * 5.0  # 5 minutes
@@ -90,20 +91,22 @@ class PerigeeRaisingEnv(gym.Env):
         return state
 
     def step(self, action):
+        assert all(abs(a) <= 1.0 for a in action), "Force in each direction can't be greater than 1"
+
         self.hist_action.append(action)
 
         current_time = self.hist_sc_state[-1].getDate()
         self._current_step += 1
         new_time = self.hist_sc_state[0].getDate().shiftedBy(self._time_step * self._current_step)
 
-        # noinspection PyTypeChecker
-        action_norm = np.linalg.norm(action)
-        if action_norm > 0.0:
-            direction = Vector3D((action / action_norm).tolist())
-            force = (self._thruster_force * action_norm).item()
-            manoeuvre = ConstantThrustManeuver(current_time, self._time_step,
-                                               force, self._thruster_isp, direction)
-            self._propagator.addForceModel(manoeuvre)
+        # We assume we have 3 pairs of thrusters, each of them can be used independently
+        for i in range(3):
+            if abs(action[i]) > 0.0:
+                direction = Vector3D(list((1.0 if action[i] > 0 else -1.0) if i == j else 0.0 for j in range(3)))
+                force = (self._thruster_max_force * abs(action[i])).item()
+                manoeuvre = ConstantThrustManeuver(current_time, self._time_step,
+                                                   force, self._thruster_isp, direction)
+                self._propagator.addForceModel(manoeuvre)
 
         state = self._propagate(new_time)
         done = self._is_done()
@@ -131,8 +134,7 @@ class PerigeeRaisingEnv(gym.Env):
         self._current_step = None
         self._random_generator = None
 
-    @staticmethod
-    def _plot(hist_sc_state, hist_action):
+    def _plot(self, hist_sc_state, hist_action):
         fig, axs = plt.subplots(3, 2, figsize=(15.0, 15.0))
         time = np.array(list(map(lambda sc_state: sc_state.getDate().durationFrom(hist_sc_state[0].getDate()),
                                  hist_sc_state))) / 3600.0  # Convert to hours
@@ -142,15 +144,24 @@ class PerigeeRaisingEnv(gym.Env):
         ra = a * (1.0 + e)
         rp = a * (1.0 - e)
         v = np.array(list(map(lambda sc_state: sc_state.getPVCoordinates().getVelocity().toArray(), hist_sc_state)))
-        f_mod = np.array(list(map(lambda action: np.linalg.norm(action), hist_action)))
-        angle_v_f = list(map(lambda q:
+        h = np.array(list(map(lambda sc_state: sc_state.getPVCoordinates().getMomentum().toArray(), hist_sc_state)))
+        f_mod = np.array(list(map(lambda action: np.linalg.norm(action), hist_action))) * self._thruster_max_force
+        angle_f_v = list(map(lambda q:
                              np.degrees(np.arccos(
                                  np.dot(q[0], q[1]) / np.linalg.norm(q[0]) / (np.linalg.norm(q[1]) + 1e-10)
                              )),
                              zip(v, hist_action)))
+        hist_action_plane = list(map(lambda q: q[1] - np.dot(q[1], q[0]) * q[0] / (np.linalg.norm(q[0]) ** 2),
+                                     zip(h, hist_action)))
+        angle_fp_v = list(map(lambda q:
+                              np.degrees(np.arccos(
+                                  np.dot(q[0], q[1] * [1, 1, 0]) / np.linalg.norm(q[0]) / (
+                                              np.linalg.norm(q[1] * [1, 1, 0]) + 1e-10)
+                              )),
+                              zip(v, hist_action_plane)))
         axs[0, 0].ticklabel_format(axis='y', style='plain', useOffset=ra[0])
         axs[0, 0].set_xlim(time[0], time[-1])
-        axs[0, 0].set_ylim(ra[0]-100.0, ra[0]+100.0)
+        axs[0, 0].set_ylim(ra[0] - 50.0, ra[0] + 250.0)
         axs[0, 0].grid(True)
         axs[0, 0].set_xlabel("time (h)")
         axs[0, 0].set_ylabel("ra (km)")
@@ -158,7 +169,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[0, 1].ticklabel_format(axis='y', style='plain', useOffset=rp[0])
         axs[0, 1].set_xlim(time[0], time[-1])
-        axs[0, 1].set_ylim(rp[0]-100.0, rp[0]+100.0)
+        axs[0, 1].set_ylim(rp[0] - 50.0, rp[0] + 250.0)
         axs[0, 1].grid(True)
         axs[0, 1].set_xlabel("time (h)")
         axs[0, 1].set_ylabel("rp (km)")
@@ -166,7 +177,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[1, 0].ticklabel_format(axis='y', style='plain', useOffset=mass[0])
         axs[1, 0].set_xlim(time[0], time[-1])
-        axs[1, 0].set_ylim(mass[0]-2.0, mass[0])
+        axs[1, 0].set_ylim(mass[0] - 4.0, mass[0])
         axs[1, 0].grid(True)
         axs[1, 0].set_xlabel("time (h)")
         axs[1, 0].set_ylabel("mass (kg)")
@@ -174,7 +185,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[1, 1].ticklabel_format(axis='y', style='plain')
         axs[1, 1].set_xlim(time[0], time[-1])
-        axs[1, 1].set_ylim(-0.1, 1.1)
+        axs[1, 1].set_ylim(-0.1, 2.0)
         axs[1, 1].grid(True)
         axs[1, 1].set_xlabel("time (h)")
         axs[1, 1].set_ylabel("|F| (-)")
@@ -193,8 +204,9 @@ class PerigeeRaisingEnv(gym.Env):
         axs[2, 1].set_ylim(-10.0, 190.0)
         axs[2, 1].grid(True)
         axs[2, 1].set_xlabel("time (h)")
-        axs[2, 1].set_ylabel("angle v-F (deg)")
-        axs[2, 1].plot(time[0:-1], angle_v_f)
+        axs[2, 1].set_ylabel("angle F-v (deg)")
+        axs[2, 1].plot(time[0:-1], angle_f_v)
+        axs[2, 1].plot(time[0:-1], angle_fp_v)
 
         return fig
 
@@ -210,6 +222,7 @@ class PerigeeRaisingEnv(gym.Env):
         return self._current_step >= self._max_steps
 
     def _get_reward(self):
+        # Only give a reward at the end of the episode
         if not self._is_done():
             return 0.0
         ra0, rp0, m0 = self._get_ra_rp_m(self.hist_sc_state[0])
@@ -218,7 +231,7 @@ class PerigeeRaisingEnv(gym.Env):
         return \
             -1.0 * abs(ra - ra0) + \
             1.0 * (rp - rp0) + \
-            0.0 * (m - m0)  # Increase me if you want mass to be optimised
+            4.0e4 * (m - m0)
 
     @staticmethod
     def _get_ra_rp_m(sc_state):
@@ -228,3 +241,6 @@ class PerigeeRaisingEnv(gym.Env):
         rp = a * (1.0 - e)
         m = sc_state.getMass()
         return ra, rp, m
+
+    def add_event_detector(self, detector):
+        self._propagator.addEventDetector(detector)
