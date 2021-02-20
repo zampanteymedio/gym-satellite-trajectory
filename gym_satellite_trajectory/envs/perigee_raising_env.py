@@ -40,7 +40,7 @@ class PerigeeRaisingEnv(gym.Env):
         self._ref_sc_frame = FramesFactory.getGCRF()
         self._earth_degree = 4
         self._earth_order = 4
-        self._use_perturbations = True
+        self._use_perturbations = False
 
         self._spacecraft_area = 1.0  # m^2
         self._spacecraft_reflection = 2.0  # Perfect reflection

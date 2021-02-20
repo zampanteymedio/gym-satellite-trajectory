@@ -43,15 +43,15 @@ def register_environments():
         },
     )
 
-    pr_d2c_3d = [
-        np.array([0., 0., 0.]),
-        np.array([1., 0., 0.]),
-        np.array([-1., 0., 0.]),
-        np.array([0., 1., 0.]),
-        np.array([0., -1., 0.]),
-        np.array([0., 0., 1.]),
-        np.array([0., 0., -1.]),
-    ]
+    pr_d2c_3d = np.array([
+        [0., 0., 0.],
+        [1., 0., 0.],
+        [-1., 0., 0.],
+        [0., 1., 0.],
+        [0., -1., 0.],
+        [0., 0., 1.],
+        [0., 0., -1.],
+    ])
     register(
         id='PerigeeRaising-Discrete3D-v0',
         entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
@@ -62,11 +62,11 @@ def register_environments():
         },
     )
 
-    pr_d2c_1d = [
-        np.array([0., 0., 0.]),
-        np.array([0., 1., 0.]),
-        np.array([0., -1., 0.]),
-    ]
+    pr_d2c_1d = np.array([
+        [0., 0., 0.],
+        [0., 1., 0.],
+        [0., -1., 0.],
+    ])
     register(
         id='PerigeeRaising-Discrete1D-v0',
         entry_point='gym_satellite_trajectory.wrappers.transform_action:TransformAction',
