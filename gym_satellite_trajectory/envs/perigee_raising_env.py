@@ -7,8 +7,15 @@ from gym.spaces import Box
 from numpy.random import RandomState
 from org.hipparchus.geometry.euclidean.threed import Vector3D
 from org.orekit.attitudes import InertialProvider
+from org.orekit.bodies import CelestialBodyFactory
+from org.orekit.bodies import OneAxisEllipsoid
+from org.orekit.forces.gravity import HolmesFeatherstoneAttractionModel
 from org.orekit.forces.gravity import NewtonianAttraction
+from org.orekit.forces.gravity import ThirdBodyAttraction
+from org.orekit.forces.gravity.potential import GravityFieldFactory
 from org.orekit.forces.maneuvers import ConstantThrustManeuver
+from org.orekit.forces.radiation import IsotropicRadiationSingleCoefficient
+from org.orekit.forces.radiation import SolarRadiationPressure
 from org.orekit.frames import FramesFactory
 from org.orekit.orbits import KeplerianOrbit
 from org.orekit.orbits import OrbitType
@@ -19,20 +26,25 @@ from org.orekit.propagation.numerical import NumericalPropagator
 from org.orekit.time import AbsoluteDate
 from org.orekit.time import TimeScalesFactory
 from org.orekit.utils import Constants
+from org.orekit.utils import IERSConventions
 
 
 class PerigeeRaisingEnv(gym.Env):
     def __init__(self, **kwargs):
         super(gym.Env, self).__init__(**kwargs)
-        self._ref_time = AbsoluteDate(2004, 2, 1, 0, 0, 0.0, TimeScalesFactory.getUTC())
+        self._ref_time = AbsoluteDate(2022, 6, 16, 0, 0, 0.0, TimeScalesFactory.getUTC())
         self._ref_frame = FramesFactory.getGCRF()
-        # self._ref_sv = np.array([10000.e3, 0.1, 0.0, 0.0, 0.0, 0.0])
-        self._ref_sv = np.array([10000.e3, 0.1, math.pi / 4.0, math.pi / 6.0, math.pi * 4.0 / 6.0, 0.0])
+        self._ref_sv = np.array([10000.e3, 0.1, math.pi / 3.0, 4.0 * math.pi / 3.0, 2.0 * math.pi / 3.0, 0.0])
         self._ref_sv_pert = np.array([0.0, 0.0, 0.0, 0.0, 0.0, math.pi])
-        self._ref_mass = 1000.0
+        self._ref_mass = 100.0  # Kg
         self._ref_sc_frame = FramesFactory.getGCRF()
+        self._earth_degree = 4
+        self._earth_order = 4
+        self._use_perturbations = True
 
-        self._thruster_max_force = 1.0  # N
+        self._spacecraft_area = 1.0  # m^2
+        self._spacecraft_reflection = 2.0  # Perfect reflection
+        self._thruster_max_force = 0.1  # N
         self._thruster_isp = 4000.0  # s
 
         self._time_step = 60.0 * 5.0  # 5 minutes
@@ -71,8 +83,29 @@ class PerigeeRaisingEnv(gym.Env):
         self._propagator.setSlaveMode()
         self._propagator.setOrbitType(OrbitType.CARTESIAN)
 
-        point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
-        self._propagator.addForceModel(point_gravity)
+        # Earth gravity field
+        if self._earth_degree == 0 or not self._use_perturbations:
+            point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
+            self._propagator.addForceModel(point_gravity)
+        else:
+            earth = OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                                     Constants.WGS84_EARTH_FLATTENING,
+                                     FramesFactory.getITRF(IERSConventions.IERS_2010, True))
+            harmonics_gravity_provider = GravityFieldFactory.getNormalizedProvider(self._earth_degree, self._earth_order)
+            self._propagator.addForceModel(
+                HolmesFeatherstoneAttractionModel(earth.getBodyFrame(), harmonics_gravity_provider))
+
+        if self._use_perturbations:
+            # Sun and Moon attraction
+            self._propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getSun()))
+            self._propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getMoon()))
+
+            # solar radiation pressure
+            self._propagator.addForceModel(
+                SolarRadiationPressure(CelestialBodyFactory.getSun(),
+                                       earth.getEquatorialRadius(),
+                                       IsotropicRadiationSingleCoefficient(self._spacecraft_area,
+                                                                           self._spacecraft_reflection)))
 
         self.prev_hist_sc_state = self.hist_sc_state
         self.hist_sc_state = []
@@ -90,7 +123,9 @@ class PerigeeRaisingEnv(gym.Env):
         state = self._propagate(self._propagator.getInitialState().getDate())
         return state
 
-    def step(self, action):
+    def step(self, a):
+        print(type(a))
+        action = a
         assert all(abs(a) <= 1.0 for a in action), "Force in each direction can't be greater than 1"
 
         self.hist_action.append(action)
@@ -156,12 +191,12 @@ class PerigeeRaisingEnv(gym.Env):
         angle_fp_v = list(map(lambda q:
                               np.degrees(np.arccos(
                                   np.dot(q[0], q[1] * [1, 1, 0]) / np.linalg.norm(q[0]) / (
-                                              np.linalg.norm(q[1] * [1, 1, 0]) + 1e-10)
+                                          np.linalg.norm(q[1] * [1, 1, 0]) + 1e-10)
                               )),
                               zip(v, hist_action_plane)))
         axs[0, 0].ticklabel_format(axis='y', style='plain', useOffset=ra[0])
         axs[0, 0].set_xlim(time[0], time[-1])
-        axs[0, 0].set_ylim(ra[0] - 50.0, ra[0] + 250.0)
+        axs[0, 0].set_ylim(ra[0] - 50.0, ra[0] + 25.0)
         axs[0, 0].grid(True)
         axs[0, 0].set_xlabel("time (h)")
         axs[0, 0].set_ylabel("ra (km)")
@@ -169,7 +204,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[0, 1].ticklabel_format(axis='y', style='plain', useOffset=rp[0])
         axs[0, 1].set_xlim(time[0], time[-1])
-        axs[0, 1].set_ylim(rp[0] - 50.0, rp[0] + 250.0)
+        axs[0, 1].set_ylim(rp[0] - 50.0, rp[0] + 25.0)
         axs[0, 1].grid(True)
         axs[0, 1].set_xlabel("time (h)")
         axs[0, 1].set_ylabel("rp (km)")
@@ -177,7 +212,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[1, 0].ticklabel_format(axis='y', style='plain', useOffset=mass[0])
         axs[1, 0].set_xlim(time[0], time[-1])
-        axs[1, 0].set_ylim(mass[0] - 4.0, mass[0])
+        axs[1, 0].set_ylim(mass[0] - 0.4, mass[0])
         axs[1, 0].grid(True)
         axs[1, 0].set_xlabel("time (h)")
         axs[1, 0].set_ylabel("mass (kg)")
@@ -185,7 +220,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[1, 1].ticklabel_format(axis='y', style='plain')
         axs[1, 1].set_xlim(time[0], time[-1])
-        axs[1, 1].set_ylim(-0.1, 2.0)
+        axs[1, 1].set_ylim(-0.1 * self._thruster_max_force, 2.0 * self._thruster_max_force)
         axs[1, 1].grid(True)
         axs[1, 1].set_xlabel("time (h)")
         axs[1, 1].set_ylabel("|F| (-)")
@@ -193,7 +228,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[2, 0].ticklabel_format(axis='y', style='plain')
         axs[2, 0].set_xlim(time[0], time[-1])
-        axs[2, 0].set_ylim(-1.1, 1.1)
+        axs[2, 0].set_ylim(-1.1 * self._thruster_max_force, 1.1 * self._thruster_max_force)
         axs[2, 0].grid(True)
         axs[2, 0].set_xlabel("time (h)")
         axs[2, 0].set_ylabel("F (-)")

@@ -39,18 +39,18 @@ def register_environments():
         kwargs={
             'env': 'PerigeeRaising-Continuous3D-v0',
             'action_space': Box(low=-1., high=1., shape=(1,), dtype=np.float64),
-            'f': lambda action: [0., action[0], 0.],
+            'f': lambda action: np.array([0., action[0], 0.]),
         },
     )
 
     pr_d2c_3d = [
-        [0., 0., 0.],
-        [1., 0., 0.],
-        [-1., 0., 0.],
-        [0., 1., 0.],
-        [0., -1., 0.],
-        [0., 0., 1.],
-        [0., 0., -1.],
+        np.array([0., 0., 0.]),
+        np.array([1., 0., 0.]),
+        np.array([-1., 0., 0.]),
+        np.array([0., 1., 0.]),
+        np.array([0., -1., 0.]),
+        np.array([0., 0., 1.]),
+        np.array([0., 0., -1.]),
     ]
     register(
         id='PerigeeRaising-Discrete3D-v0',
@@ -63,9 +63,9 @@ def register_environments():
     )
 
     pr_d2c_1d = [
-        [0., 0., 0.],
-        [0., 1., 0.],
-        [0., -1., 0.],
+        np.array([0., 0., 0.]),
+        np.array([0., 1., 0.]),
+        np.array([0., -1., 0.]),
     ]
     register(
         id='PerigeeRaising-Discrete1D-v0',
