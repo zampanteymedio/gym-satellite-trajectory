@@ -123,9 +123,7 @@ class PerigeeRaisingEnv(gym.Env):
         state = self._propagate(self._propagator.getInitialState().getDate())
         return state
 
-    def step(self, a):
-        print(type(a))
-        action = a
+    def step(self, action):
         assert all(abs(a) <= 1.0 for a in action), "Force in each direction can't be greater than 1"
 
         self.hist_action.append(action)
