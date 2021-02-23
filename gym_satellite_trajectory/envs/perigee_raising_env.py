@@ -38,17 +38,17 @@ class PerigeeRaisingEnv(gym.Env):
         self._ref_sv_pert = np.array([0.0, 0.0, 0.0, 0.0, 0.0, math.pi])
         self._ref_mass = 100.0  # Kg
         self._ref_sc_frame = FramesFactory.getGCRF()
+        self._use_perturbations = False
         self._earth_degree = 4
         self._earth_order = 4
-        self._use_perturbations = False
 
         self._spacecraft_area = 1.0  # m^2
         self._spacecraft_reflection = 2.0  # Perfect reflection
-        self._thruster_max_force = 0.1  # N
+        self._thruster_max_force = 0.01  # N
         self._thruster_isp = 4000.0  # s
 
         self._time_step = 60.0 * 5.0  # 5 minutes
-        self._max_steps = 150
+        self._max_steps = 166
 
         min_pos = self._ref_sv[0] * (1.0 - self._ref_sv[1])
         max_pos = self._ref_sv[0] * (1.0 + self._ref_sv[1])
@@ -73,48 +73,10 @@ class PerigeeRaisingEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        # noinspection PyArgumentList
-        kep = (self._ref_sv + (self._random_generator.rand(6) * 2. - 1.) * self._ref_sv_pert).tolist()
-        orbit = KeplerianOrbit(kep[0], kep[1], kep[2], kep[3], kep[4], kep[5],
-                               PositionAngle.MEAN, self._ref_frame, self._ref_time, Constants.WGS84_EARTH_MU)
-
-        integrator = DormandPrince853IntegratorBuilder(1.0, 1000., 1.0).buildIntegrator(orbit, OrbitType.CARTESIAN)
-        self._propagator = NumericalPropagator(integrator)
-        self._propagator.setSlaveMode()
-        self._propagator.setOrbitType(OrbitType.CARTESIAN)
-
-        # Earth gravity field
-        if self._earth_degree == 0 or not self._use_perturbations:
-            point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
-            self._propagator.addForceModel(point_gravity)
-        else:
-            earth = OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
-                                     Constants.WGS84_EARTH_FLATTENING,
-                                     FramesFactory.getITRF(IERSConventions.IERS_2010, True))
-            harmonics_gravity_provider = GravityFieldFactory.getNormalizedProvider(self._earth_degree, self._earth_order)
-            self._propagator.addForceModel(
-                HolmesFeatherstoneAttractionModel(earth.getBodyFrame(), harmonics_gravity_provider))
-
-        if self._use_perturbations:
-            # Sun and Moon attraction
-            self._propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getSun()))
-            self._propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getMoon()))
-
-            # solar radiation pressure
-            self._propagator.addForceModel(
-                SolarRadiationPressure(CelestialBodyFactory.getSun(),
-                                       earth.getEquatorialRadius(),
-                                       IsotropicRadiationSingleCoefficient(self._spacecraft_area,
-                                                                           self._spacecraft_reflection)))
+        self._propagator = self._create_propagator()
 
         self.prev_hist_sc_state = self.hist_sc_state
         self.hist_sc_state = []
-
-        self._propagator.setInitialState(SpacecraftState(orbit, self._ref_mass))
-
-        rotation = FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation()
-        attitude = InertialProvider(rotation)
-        self._propagator.setAttitudeProvider(attitude)
 
         self._current_step = 0
         self.prev_hist_action = self.hist_action
@@ -123,8 +85,49 @@ class PerigeeRaisingEnv(gym.Env):
         state = self._propagate(self._propagator.getInitialState().getDate())
         return state
 
+    def _create_propagator(self):
+        kep = (self._ref_sv + (self._random_generator.rand(6) * 2. - 1.) * self._ref_sv_pert).tolist()
+        orbit = KeplerianOrbit(kep[0], kep[1], kep[2], kep[3], kep[4], kep[5],
+                               PositionAngle.MEAN, self._ref_frame, self._ref_time, Constants.WGS84_EARTH_MU)
+
+        integrator = DormandPrince853IntegratorBuilder(1.0, 1000., 1.0)\
+            .buildIntegrator(orbit, OrbitType.CARTESIAN)
+        propagator = NumericalPropagator(integrator)
+        propagator.setSlaveMode()
+        propagator.setOrbitType(OrbitType.CARTESIAN)
+        propagator.setInitialState(SpacecraftState(orbit, self._ref_mass))
+
+        # Earth gravity field
+        if self._earth_degree == 0 or not self._use_perturbations:
+            point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
+            propagator.addForceModel(point_gravity)
+        else:
+            earth = OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                                     Constants.WGS84_EARTH_FLATTENING,
+                                     FramesFactory.getITRF(IERSConventions.IERS_2010, True))
+            harmonics_gravity_provider = GravityFieldFactory.getNormalizedProvider(self._earth_degree, self._earth_order)
+            propagator.addForceModel(
+                HolmesFeatherstoneAttractionModel(earth.getBodyFrame(), harmonics_gravity_provider))
+
+        if self._use_perturbations:
+            # Sun and Moon attraction
+            propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getSun()))
+            propagator.addForceModel(ThirdBodyAttraction(CelestialBodyFactory.getMoon()))
+
+            # Solar radiation pressure
+            propagator.addForceModel(
+                SolarRadiationPressure(CelestialBodyFactory.getSun(),
+                                       earth.getEquatorialRadius(),
+                                       IsotropicRadiationSingleCoefficient(self._spacecraft_area,
+                                                                           self._spacecraft_reflection)))
+
+        rotation = FramesFactory.getEME2000().getTransformTo(self._ref_sc_frame, self._ref_time).getRotation()
+        attitude = InertialProvider(rotation)
+        propagator.setAttitudeProvider(attitude)
+        return propagator
+
     def step(self, action):
-        assert all(abs(a) <= 1.0 for a in action), "Force in each direction can't be greater than 1"
+        assert all(abs(a) <= 1.0 for a in action), f"Force in each direction can't be greater than 1: {action}"
 
         self.hist_action.append(action)
 
@@ -194,7 +197,7 @@ class PerigeeRaisingEnv(gym.Env):
                               zip(v, hist_action_plane)))
         axs[0, 0].ticklabel_format(axis='y', style='plain', useOffset=ra[0])
         axs[0, 0].set_xlim(time[0], time[-1])
-        axs[0, 0].set_ylim(ra[0] - 50.0, ra[0] + 25.0)
+        axs[0, 0].set_ylim(ra[0] - 15.0, ra[0] + 15.0)
         axs[0, 0].grid(True)
         axs[0, 0].set_xlabel("time (h)")
         axs[0, 0].set_ylabel("ra (km)")
@@ -202,7 +205,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[0, 1].ticklabel_format(axis='y', style='plain', useOffset=rp[0])
         axs[0, 1].set_xlim(time[0], time[-1])
-        axs[0, 1].set_ylim(rp[0] - 50.0, rp[0] + 25.0)
+        axs[0, 1].set_ylim(rp[0] - 5.0, rp[0] + 25.0)
         axs[0, 1].grid(True)
         axs[0, 1].set_xlabel("time (h)")
         axs[0, 1].set_ylabel("rp (km)")
@@ -210,7 +213,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[1, 0].ticklabel_format(axis='y', style='plain', useOffset=mass[0])
         axs[1, 0].set_xlim(time[0], time[-1])
-        axs[1, 0].set_ylim(mass[0] - 0.4, mass[0])
+        axs[1, 0].set_ylim(mass[0] - 0.04, mass[0])
         axs[1, 0].grid(True)
         axs[1, 0].set_xlabel("time (h)")
         axs[1, 0].set_ylabel("mass (kg)")
@@ -226,7 +229,7 @@ class PerigeeRaisingEnv(gym.Env):
 
         axs[2, 0].ticklabel_format(axis='y', style='plain')
         axs[2, 0].set_xlim(time[0], time[-1])
-        axs[2, 0].set_ylim(-1.1 * self._thruster_max_force, 1.1 * self._thruster_max_force)
+        axs[2, 0].set_ylim(-1.1, 1.1)
         axs[2, 0].grid(True)
         axs[2, 0].set_xlabel("time (h)")
         axs[2, 0].set_ylabel("F (-)")
@@ -261,10 +264,10 @@ class PerigeeRaisingEnv(gym.Env):
         ra0, rp0, m0 = self._get_ra_rp_m(self.hist_sc_state[0])
         ra, rp, m = self._get_ra_rp_m(self.hist_sc_state[-1])
 
-        return \
-            -1.0 * abs(ra - ra0) + \
-            1.0 * (rp - rp0) + \
-            4.0e4 * (m - m0)
+        return 1.e-4 * (
+            -1.0 * abs(ra - ra0) +
+            1.0 * (rp - rp0) +
+            2.0e5 * (m - m0))  # 6.25e5 would give the same weight to 25 km and to 0.040 kg
 
     @staticmethod
     def _get_ra_rp_m(sc_state):
