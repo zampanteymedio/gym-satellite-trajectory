@@ -30,7 +30,7 @@ from org.orekit.utils import IERSConventions
 
 
 class PerigeeRaisingEnv(gym.Env):
-    def __init__(self, **kwargs):
+    def __init__(self, use_perturbations=False, perturb_action=False, **kwargs):
         super(gym.Env, self).__init__(**kwargs)
         self._ref_time = AbsoluteDate(2022, 6, 16, 0, 0, 0.0, TimeScalesFactory.getUTC())
         self._ref_frame = FramesFactory.getGCRF()
@@ -38,9 +38,10 @@ class PerigeeRaisingEnv(gym.Env):
         self._ref_sv_pert = np.array([0.0, 0.0, 0.0, 0.0, 0.0, math.pi])
         self._ref_mass = 100.0  # Kg
         self._ref_sc_frame = FramesFactory.getGCRF()
-        self._use_perturbations = False
-        self._earth_degree = 4
-        self._earth_order = 4
+        self._use_perturbations = use_perturbations
+        self._perturb_action = perturb_action
+        self._earth_degree = 16
+        self._earth_order = 16
 
         self._spacecraft_area = 1.0  # m^2
         self._spacecraft_reflection = 2.0  # Perfect reflection
@@ -98,7 +99,7 @@ class PerigeeRaisingEnv(gym.Env):
         propagator.setInitialState(SpacecraftState(orbit, self._ref_mass))
 
         # Earth gravity field
-        if self._earth_degree == 0 or not self._use_perturbations:
+        if not self._use_perturbations:
             point_gravity = NewtonianAttraction(Constants.WGS84_EARTH_MU)
             propagator.addForceModel(point_gravity)
         else:
@@ -128,6 +129,9 @@ class PerigeeRaisingEnv(gym.Env):
 
     def step(self, action):
         assert all(abs(a) <= 1.0 for a in action), f"Force in each direction can't be greater than 1: {action}"
+
+        if self._perturb_action:
+            action *= np.random.normal(1.0, 0.1)
 
         self.hist_action.append(action)
 
