@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='gym-satellite-trajectory',
-      version='0.0.1+snapshot',
+      version='0.1',
       python_requires='>=3.6',
       packages=find_packages(where='.', exclude=('test',)),
       package_data={'gym_satellite_trajectory': ['data/orekit-data.zip']},
