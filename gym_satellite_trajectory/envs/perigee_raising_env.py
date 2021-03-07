@@ -281,6 +281,3 @@ class PerigeeRaisingEnv(gym.Env):
         rp = a * (1.0 - e)
         m = sc_state.getMass()
         return ra, rp, m
-
-    def add_event_detector(self, detector):
-        self._propagator.addEventDetector(detector)
