@@ -1,4 +1,8 @@
 os: linux
+arch: arm64-graviton2
+dist: focal
+virt: vm
+group: edge
 
 language: python
 
