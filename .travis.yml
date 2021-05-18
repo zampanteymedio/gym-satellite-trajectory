@@ -3,12 +3,11 @@ os: linux
 language: python
 
 python:
-# 3.6 and 3.7 commented out not to exhaust Travis CI credits
+# commented out not to exhaust Travis CI credits
 #  - "3.6"
 #  - "3.7"
-  - "3.8"
-# Orekit is not yet available for Python 3.9
-#  - "3.9"
+#  - "3.8"
+  - "3.9"
 
 cache: pip
 
@@ -29,8 +28,8 @@ install:
   - conda create -n test python="$TRAVIS_PYTHON_VERSION"
   - source activate test
 
-  - conda install orekit=10.2
-  - conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
+  - conda install orekit
+  - conda install pytorch torchvision torchaudio cudatoolkit -c pytorch
   - pip install -e .[test]
 
 script:
